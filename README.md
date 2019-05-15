@@ -34,6 +34,7 @@ To configure this, you can add an optional field `x-validate-logged: Boolean` in
 The errors are informed with a `SchemaValidatorError`.
 This object has a `code` that can be useful for a correct error handling.
 The codes are the following:
+
 |Code	|Description						|
 |-----|-----------------------------|
 |1		|Invalid verb 						|
