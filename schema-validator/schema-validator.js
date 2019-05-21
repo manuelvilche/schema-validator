@@ -128,7 +128,7 @@ class SchemaValidator {
 
 	isValidVerb(verb) {
 		return typeof verb === 'string'
-			&& this.constructor.verbs.includes(verb);
+			&& this.constructor.verbs.includes(verb.toLowerCase());
 	}
 
 	shouldValidateClient() {
