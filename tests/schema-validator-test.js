@@ -60,7 +60,8 @@ describe('SchemaValidator', function() {
 
 	it('should throw when construct with invalid verb', function() {
 		assert.throws(() => {
-			new SchemaValidator('/api/foo', 'foo');
+			const schemaValidator = new SchemaValidator('/api/foo', 'foo');
+			schemaValidator.validate();
 		}, {
 			name: 'SchemaValidatorError',
 			code: SchemaValidatorError.codes.INVALID_VERB

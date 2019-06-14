@@ -27,13 +27,8 @@ class SchemaValidator {
 	}
 
 	constructor(endpoint, verb = 'get') {
-
 		this.endpoint = this.constructor.fixEndpoint(endpoint);
-
-		if(!this.isValidVerb(verb))
-			throw new SchemaValidatorError('Invalid verb', SchemaValidatorError.codes.INVALID_VERB);
-
-		this.verb = verb.toLowerCase();
+		this.verb = verb;
 	}
 
 	static cachePaths() {
@@ -114,6 +109,11 @@ class SchemaValidator {
 
 	validate() {
 
+		if(!this.isValidVerb())
+			throw new SchemaValidatorError('Invalid verb', SchemaValidatorError.codes.INVALID_VERB);
+
+		this.verb = this.verb.toLowerCase();
+
 		if(!this.paths)
 			this.constructor.cachePaths();
 
@@ -126,9 +126,9 @@ class SchemaValidator {
 		return true;
 	}
 
-	isValidVerb(verb) {
-		return typeof verb === 'string'
-			&& this.constructor.verbs.includes(verb.toLowerCase());
+	isValidVerb() {
+		return typeof this.verb === 'string'
+			&& this.constructor.verbs.includes(this.verb.toLowerCase());
 	}
 
 	shouldValidateClient() {
