@@ -47,7 +47,7 @@ To configure this, you can add an optional field `x-validate-logged: Boolean` in
 
 - `shouldValidateApiSecuritySchemas()`\
 Determinates if the endpoint should validate the security schemas.\
-To use this method, you must add an array field using the package [@janiscommerce/settings](https://www.npmjs.com/package/@janiscommerce/settings) inside the key `schemaValidator` you must add a property `securitySchemas` in order to validate the schema. Then in your api have to add a field `security: <Array>` and the components `securitySchems` in `schema.paths[myEndpoint][myVerb]`. See more [Open API Speficication](http://spec.openapis.org/oas/v3.0.3#security-scheme-object)
+To use this method, you must add an array field using the package [@janiscommerce/settings](https://www.npmjs.com/package/@janiscommerce/settings) inside the key `schemaValidator` you must add a property `securitySchemas` in order to validate the schema. Then in your API you must add the field `security: <Array>` and the component `securitySchems` of your service. See more [Open API Speficication](http://spec.openapis.org/oas/v3.0.3#security-scheme-object)
 
 ## Errors
 
