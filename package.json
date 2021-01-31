@@ -27,5 +27,9 @@
     "mock-require": "^3.0.3",
     "nyc": "^14.1.0",
     "sinon": "^7.3.2"
+  },
+  "dependencies": {
+    "@janiscommerce/settings": "^1.0.1",
+    "path": "^0.12.7"
   }
 }

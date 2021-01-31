@@ -1,13 +1,21 @@
 'use strict';
 
 const path = require('path');
+const Settings = require('@janiscommerce/settings');
 
 const SchemaValidatorError = require('./schema-validator-error');
 
 class SchemaValidator {
 
 	static get schemaPath() {
-		return path.join(process.cwd(), 'schemas/build/public.json'); // TODO retrieve from setting in .json
+
+		const schemaValidatorSettings = Settings.get('schemaValidator');
+
+		const schemaPath = schemaValidatorSettings && schemaValidatorSettings.schemaPath ? schemaValidatorSettings.schemaPath : false;
+
+		const filePath = schemaPath || 'schemas/build/public.json';
+
+		return path.join(process.cwd(), filePath);
 	}
 
 	static get valdiateClientSchemaField() {
@@ -16,6 +24,15 @@ class SchemaValidator {
 
 	static get valdiateLoggedSchemaField() {
 		return 'x-validate-logged';
+	}
+
+	static getAuthorizationHeaders() {
+		const schemaValidatorSettings = Settings.get('schemaValidator');
+		return schemaValidatorSettings && schemaValidatorSettings.securitySchemas ? schemaValidatorSettings.securitySchemas : [];
+	}
+
+	get getAuthorizationHeaders() {
+		return this.constructor.getAuthorizationHeaders;
 	}
 
 	static get verbs() {
@@ -54,6 +71,8 @@ class SchemaValidator {
 			|| Array.isArray(schema.paths))
 			throw new SchemaValidatorError('Invalid schema paths, schema.paths must be an object', SchemaValidatorError.codes.INVALID_PATHS);
 
+		const securitySchemes = this.getSecuritySchemes(Object.entries(schema.components || {}));
+
 		for(const [endpoint, endpointData] of Object.entries(schema.paths)) {
 
 			if(typeof endpointData !== 'object'
@@ -74,12 +93,26 @@ class SchemaValidator {
 					shouldValidateClient: !!endpointData[verb][this.valdiateClientSchemaField],
 					shouldValidateLogged: !!endpointData[verb][this.valdiateLoggedSchemaField]
 				};
+
+				this.paths[fixedEndpoint][verb].shouldValidateApiSecuritySchemas = this.hasToValidateApiSecured(endpointData[verb], securitySchemes);
 			}
 		}
 	}
 
-	static fixEndpoint(endpoint) {
+	static getSecuritySchemes(components) {
 
+		for(const [component, componentValue] of components) {
+
+			if(component !== 'securitySchemes')
+				continue;
+
+			return componentValue;
+		}
+
+		return {};
+	}
+
+	static fixEndpoint(endpoint) {
 		// remove slash at start
 		if(endpoint.substr(0, 1) === '/')
 			// /api/products/20/images -> api/products/20/images
@@ -131,6 +164,37 @@ class SchemaValidator {
 			&& this.constructor.verbs.includes(this.verb.toLowerCase());
 	}
 
+	static hasToValidateApiSecured(endpointData, securitySchemes) {
+
+		if(!endpointData.security)
+			return false;
+
+		const [endpointSecuritySchemes] = endpointData.security;
+
+		for(const authorizationHeader of this.getAuthorizationHeaders()) {
+
+			const securitySchemeName = this.getSecuritySchemesComponent(authorizationHeader, securitySchemes);
+
+			if(!endpointSecuritySchemes[securitySchemeName])
+				return false;
+		}
+
+		return true;
+	}
+
+	static getSecuritySchemesComponent(securitySchemeName, securitySchemes) {
+
+		for(const [securitySchemeComponentName, securitySchemeComponentValue] of Object.entries(securitySchemes)) {
+
+			if(!securitySchemeComponentValue.name || securitySchemeComponentValue.name !== securitySchemeName)
+				continue;
+
+			return securitySchemeComponentName;
+		}
+
+		return false;
+	}
+
 	shouldValidateClient() {
 		this.validate();
 		return !!this.paths[this.endpoint][this.verb].shouldValidateClient;
@@ -139,6 +203,11 @@ class SchemaValidator {
 	shouldValidateLogged() {
 		this.validate();
 		return !!this.paths[this.endpoint][this.verb].shouldValidateLogged;
+	}
+
+	shouldValidateApiSecuritySchemas() {
+		this.validate();
+		return !!this.paths[this.endpoint][this.verb].shouldValidateApiSecuritySchemas;
 	}
 
 }

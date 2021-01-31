@@ -4,13 +4,27 @@
 
 Schema Validator is a module that allows validate endpoints against a local schema.\
 The schema must be a `JSON` in OpenAPI 3.0\
-The file must be located in `path/to/root/schemas/build/public.json`.\
 The endpoints will be validated in `paths` by endpoint and verb.
 
 ## Installation
 
 ```
 npm install @janiscommerce/schema-validator
+```
+
+## Configuration file
+
+You could configure the `schemaFilePath` config in your services using the package [@janiscommerce/settings](https://www.npmjs.com/package/@janiscommerce/settings) in the `schemaValidator` key. The path default it will be `path/to/root/schemas/build/public.json`.
+
+```json
+{
+	"schemaValidator": {
+		"schemaPath": "schemas/public.json",
+		"securitySchemas": [
+			"api-key", "api-secret"
+		]
+	}
+}
 ```
 
 ## API
@@ -30,6 +44,10 @@ To configure this, you can add an optional field `x-validate-client: Boolean` in
 - `shouldValidateLogged()`\
 Determinates if the endpoint should validate logged.\
 To configure this, you can add an optional field `x-validate-logged: Boolean` in `schema.paths[myEndpoint][myVerb]`
+
+- `shouldValidateApiSecuritySchemas()`\
+Determinates if the endpoint has a security schema.\
+To use this method, you must add an array field using the package [@janiscommerce/settings](https://www.npmjs.com/package/@janiscommerce/settings) iside the key `schemaValidator` you must add a property `authorizationHeaders` in order to validate the schema. You can add an optional field `security: Array` with his correspondant `securitySchems` in `schema.paths[myEndpoint][myVerb]`. See more [Open API Speficication](http://spec.openapis.org/oas/v3.0.3#security-scheme-object)
 
 ## Errors
 

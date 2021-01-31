@@ -1,16 +1,14 @@
 'use strict';
 
-const mockRequire = require('mock-require');
-
+const sinon = require('sinon');
 const assert = require('assert');
-const sandbox = require('sinon').createSandbox();
+const mockRequire = require('mock-require');
+const Settings = require('@janiscommerce/settings');
 
 const SchemaValidator = require('./../index');
 const { SchemaValidatorError } = require('./../schema-validator');
 
-/* eslint-disable prefer-arrow-callback */
-
-describe('SchemaValidator', function() {
+describe('SchemaValidator', () => {
 
 	const mockSchema = schema => {
 		/* eslint-disable global-require, import/no-dynamic-require */
@@ -34,6 +32,21 @@ describe('SchemaValidator', function() {
 					}
 				},
 
+				'/api/secured': {
+					get: {
+						'x-validate-client': false
+					},
+					post: {
+						'x-validate-client': false,
+						security: [
+							{
+								ApiKey: [],
+								ApiSecret: []
+							}
+						]
+					}
+				},
+
 				'/api/with-slashes-api/': { get: {} },
 				'/api/with-slash-start-api': { get: {} },
 				'api/with-slash-end-api/': { get: {} },
@@ -48,17 +61,37 @@ describe('SchemaValidator', function() {
 				'categories/{id}/products': { get: {} },
 				'categories/{id}/products/{id}': { get: {} },
 				'categories/{id}/products/{id}/images': { get: {} }
+			},
+			components: {
+				securitySchemes: {
+					ApiKey: {
+						type: 'apiKey',
+						in: 'header',
+						name: 'api-key',
+						description: 'The API Key'
+					},
+					ApiSecret: {
+						type: 'apiKey',
+						in: 'header',
+						name: 'api-secret',
+						description: 'The API Secret'
+					}
+				}
 			}
 		});
 	};
 
+	beforeEach(() => {
+		this.settingsStub = sinon.stub(Settings, 'get').withArgs('schemaValidator');
+	});
+
 	afterEach(() => {
-		sandbox.restore();
+		sinon.restore();
 		mockRequire.stopAll();
 		SchemaValidator.paths = null; // for cleaning cache
 	});
 
-	it('should throw when construct with invalid verb', function() {
+	it('should throw when construct with invalid verb', () => {
 		assert.throws(() => {
 			const schemaValidator = new SchemaValidator('/api/foo', 'foo');
 			schemaValidator.validate();
@@ -68,7 +101,7 @@ describe('SchemaValidator', function() {
 		});
 	});
 
-	it('should throw when schema not found', function() {
+	it('should throw when schema not found', () => {
 		assert.throws(() => {
 			const schemaValidator = new SchemaValidator('/api/endpoint');
 			schemaValidator.validate();
@@ -78,7 +111,7 @@ describe('SchemaValidator', function() {
 		});
 	});
 
-	describe('should throw with invalid paths', function() {
+	describe('should throw with invalid paths', () => {
 
 		const testInvalidPaths = endpoint => {
 			assert.throws(() => {
@@ -90,23 +123,23 @@ describe('SchemaValidator', function() {
 			});
 		};
 
-		it('when \'paths\' not found in schema', function() {
+		it('when \'paths\' not found in schema', () => {
 			mockSchema({});
 			testInvalidPaths('/api/endpoint');
 		});
 
-		it('when \'paths\' received as an array', function() {
+		it('when \'paths\' received as an array', () => {
 			mockSchema({ paths: ['/api/foo'] });
 			testInvalidPaths('/api/endpoint');
 		});
 
-		it('when \'paths\' received as a string', function() {
+		it('when \'paths\' received as a string', () => {
 			mockSchema({ paths: 'foo' });
 			testInvalidPaths('/api/endpoint');
 		});
 	});
 
-	it('should throw when endpoint not found', function() {
+	it('should throw when endpoint not found', () => {
 
 		mockValid();
 
@@ -119,11 +152,11 @@ describe('SchemaValidator', function() {
 		});
 	});
 
-	it('should throw when verb not found for an endpoint', function() {
+	it('should throw when verb not found for an endpoint', () => {
 
 		mockValid();
 
-		const test = (endpoint, verb) => {
+		const testVerbNotFoundForAndEndpoint = (endpoint, verb) => {
 			assert.throws(() => {
 				const schemaValidator = new SchemaValidator(endpoint, verb);
 				schemaValidator.validate();
@@ -133,22 +166,22 @@ describe('SchemaValidator', function() {
 			});
 		};
 
-		const spyCachePaths = sandbox.spy(SchemaValidator, 'cachePaths');
+		const spyCachePaths = sinon.spy(SchemaValidator, 'cachePaths');
 
-		test('/api/foo');
-		sandbox.assert.calledOnce(spyCachePaths);
+		testVerbNotFoundForAndEndpoint('/api/foo');
+		sinon.assert.calledOnce(spyCachePaths);
 
-		test('/api/foo', 'get');
-		sandbox.assert.calledOnce(spyCachePaths);
+		testVerbNotFoundForAndEndpoint('/api/foo', 'get');
+		sinon.assert.calledOnce(spyCachePaths);
 
-		test('/api/foo', 'post');
-		sandbox.assert.calledOnce(spyCachePaths);
+		testVerbNotFoundForAndEndpoint('/api/foo', 'post');
+		sinon.assert.calledOnce(spyCachePaths);
 
-		test('/api/bar', 'post');
-		sandbox.assert.calledOnce(spyCachePaths);
+		testVerbNotFoundForAndEndpoint('/api/bar', 'post');
+		sinon.assert.calledOnce(spyCachePaths);
 	});
 
-	describe('should validate', function() {
+	describe('should validate', () => {
 
 		const test = (endpoint, verb) => {
 			mockValid();
@@ -156,116 +189,144 @@ describe('SchemaValidator', function() {
 			assert(schemaValidator.validate());
 		};
 
-		it('when found in schema', function() {
+		it('when found in schema', () => {
 			test('/api/bar', 'get');
 		});
 
-		it('when found in schema with default verb', function() {
+		it('when found in schema with default verb', () => {
 			test('/api/bar');
 		});
 
-		it('when found in schema ', function() {
+		it('when found in schema ', () => {
 			test('/api/bar', 'get');
 		});
 
-		it('when found in schema - api with slashes and starting with api', function() {
+		it('when found in schema - api with slashes and starting with api', () => {
 			test('/api/with-slashes-api/', 'get');
 			test('/api/with-slashes-api', 'get');
 			test('api/with-slashes-api/', 'get');
 			test('api/with-slashes-api', 'get');
 		});
 
-		it('when found in schema - api with slash at start and starting with api', function() {
+		it('when found in schema - api with slash at start and starting with api', () => {
 			test('/api/with-slash-start-api/', 'get');
 			test('/api/with-slash-start-api', 'get');
 			test('api/with-slash-start-api/', 'get');
 			test('api/with-slash-start-api', 'get');
 		});
 
-		it('when found in schema - api with slash at end and starting with api', function() {
+		it('when found in schema - api with slash at end and starting with api', () => {
 			test('/api/with-slash-end-api/', 'get');
 			test('/api/with-slash-end-api', 'get');
 			test('api/with-slash-end-api/', 'get');
 			test('api/with-slash-end-api', 'get');
 		});
 
-		it('when found in schema - api without slashes api and starting with api', function() {
+		it('when found in schema - api without slashes api and starting with api', () => {
 			test('/api/without-slashes-api/', 'get');
 			test('/api/without-slashes-api', 'get');
 			test('api/without-slashes-api/', 'get');
 			test('api/without-slashes-api', 'get');
 		});
 
-		it('when found in schema - with slashes', function() {
+		it('when found in schema - with slashes', () => {
 			test('/with-slashes/', 'get');
 			test('/with-slashes', 'get');
 			test('with-slashes/', 'get');
 			test('with-slashes', 'get');
 		});
 
-		it('when found in schema - with slash at start', function() {
+		it('when found in schema - with slash at start', () => {
 			test('/with-slash-start/', 'get');
 			test('/with-slash-start', 'get');
 			test('with-slash-start/', 'get');
 			test('with-slash-start', 'get');
 		});
 
-		it('when found in schema - with slash at end', function() {
+		it('when found in schema - with slash at end', () => {
 			test('/with-slash-end/', 'get');
 			test('/with-slash-end', 'get');
 			test('with-slash-end/', 'get');
 			test('with-slash-end', 'get');
 		});
 
-		it('when found in schema - without-slashes', function() {
+		it('when found in schema - without-slashes', () => {
 			test('/without-slashes/', 'get');
 			test('/without-slashes', 'get');
 			test('without-slashes/', 'get');
 			test('without-slashes', 'get');
 		});
 
-		it('when apis with resources validated', function() {
+		it('when apis with resources validated', () => {
 			test('categories/10');
 			test('categories/10/products');
 			test('categories/10/products/42');
 			test('categories/10/products/42/images');
 		});
-
 	});
 
-	it('should return \'false\' when no x-validate-client setted in schema', function() {
+	it('should return \'false\' when no x-validate-client setted in schema', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar');
 		assert(!schemaValidator.shouldValidateClient());
 	});
 
-	it('should return \'false\' no x-validate-client setted as false', function() {
+	it('should return \'false\' when x-validate-client setted as false', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar', 'patch');
 		assert(!schemaValidator.shouldValidateClient());
 	});
 
-	it('should return \'true\' no x-validate-client setted as true', function() {
+	it('should return \'true\' when x-validate-client setted as true', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar', 'options');
 		assert(schemaValidator.shouldValidateClient());
 	});
 
-	it('should return \'false\' when no x-validate-logged setted in schema', function() {
+	it('should return \'false\' when no x-validate-logged setted in schema', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar');
 		assert(!schemaValidator.shouldValidateLogged());
 	});
 
-	it('should return \'false\' no x-validate-logged setted as false', function() {
+	it('should return \'false\' when x-validate-logged setted as false', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar', 'patch');
 		assert(!schemaValidator.shouldValidateLogged());
 	});
 
-	it('should return \'true\' no x-validate-logged setted as true', function() {
+	it('should return \'true\' when x-validate-logged setted as true', () => {
 		mockValid();
 		const schemaValidator = new SchemaValidator('/api/bar', 'options');
 		assert(schemaValidator.shouldValidateLogged());
+	});
+
+	it('should return \'true\' when api is secured', () => {
+
+		mockValid();
+
+		this.settingsStub.returns({ securitySchemas: ['api-key', 'api-secret'] });
+
+		const schemaValidator = new SchemaValidator('/api/secured', 'post');
+		assert(schemaValidator.shouldValidateApiSecuritySchemas());
+	});
+
+	it('should return \'false\' when api is secured but with wrong schema', () => {
+
+		mockValid();
+
+		this.settingsStub.returns({ securitySchemas: ['foo', 'bar'] });
+
+		const schemaValidator = new SchemaValidator('/api/secured', 'post');
+		assert(!schemaValidator.shouldValidateApiSecuritySchemas());
+	});
+
+	it('should return \'false\' when api is secured', () => {
+		mockValid();
+
+		this.settingsStub.returns({ securitySchemas: ['api-key', 'api-secret'] });
+
+		const schemaValidator = new SchemaValidator('/api/secured');
+		assert(!schemaValidator.shouldValidateApiSecuritySchemas());
 	});
 });
