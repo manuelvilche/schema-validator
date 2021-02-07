@@ -28,7 +28,7 @@ class SchemaValidator {
 
 	static getAuthorizationHeaders() {
 		const schemaValidatorSettings = Settings.get('schemaValidator');
-		return schemaValidatorSettings && schemaValidatorSettings.securitySchemas ? schemaValidatorSettings.securitySchemas : [];
+		return schemaValidatorSettings && schemaValidatorSettings.securitySchemes ? schemaValidatorSettings.securitySchemes : [];
 	}
 
 	get getAuthorizationHeaders() {

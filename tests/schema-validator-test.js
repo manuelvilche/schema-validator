@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const sinon = require('sinon');
 const assert = require('assert');
 const mockRequire = require('mock-require');
@@ -10,12 +11,15 @@ const { SchemaValidatorError } = require('./../schema-validator');
 
 describe('SchemaValidator', () => {
 
-	const mockSchema = schema => {
+	const mockSchema = (schema, schemaPath = false) => {
+
+		const patch = schemaPath ? path.join(process.cwd(), schemaPath) : SchemaValidator.schemaPath;
+
 		/* eslint-disable global-require, import/no-dynamic-require */
-		mockRequire(SchemaValidator.schemaPath, schema);
+		mockRequire(patch, schema);
 	};
 
-	const mockValid = () => {
+	const mockValid = (schemaPath = false) => {
 		mockSchema({
 			paths: {
 				'/api/foo': {},
@@ -63,6 +67,15 @@ describe('SchemaValidator', () => {
 				'categories/{id}/products/{id}/images': { get: {} }
 			},
 			components: {
+				headers: {
+					someHeder: {
+						description: 'some description',
+						schema: {
+							type: 'integer',
+							minimum: 0
+						}
+					}
+				},
 				securitySchemes: {
 					ApiKey: {
 						type: 'apiKey',
@@ -76,6 +89,16 @@ describe('SchemaValidator', () => {
 						name: 'api-secret',
 						description: 'The API Secret'
 					}
+				}
+			}
+		}, schemaPath);
+	};
+
+	const mockWithoutSecuritySchems = () => {
+		mockSchema({
+			paths: {
+				'/api/unsecured': {
+					get: {}
 				}
 			}
 		});
@@ -305,7 +328,7 @@ describe('SchemaValidator', () => {
 
 		mockValid();
 
-		this.settingsStub.returns({ securitySchemas: ['api-key', 'api-secret'] });
+		this.settingsStub.returns({ securitySchemes: ['api-key', 'api-secret'] });
 
 		const schemaValidator = new SchemaValidator('/api/secured', 'post');
 		assert(schemaValidator.shouldValidateApiSecuritySchemas());
@@ -315,7 +338,7 @@ describe('SchemaValidator', () => {
 
 		mockValid();
 
-		this.settingsStub.returns({ securitySchemas: ['foo', 'bar'] });
+		this.settingsStub.returns({ securitySchemes: ['foo', 'bar'] });
 
 		const schemaValidator = new SchemaValidator('/api/secured', 'post');
 		assert(!schemaValidator.shouldValidateApiSecuritySchemas());
@@ -324,9 +347,56 @@ describe('SchemaValidator', () => {
 	it('should return \'false\' when api is secured', () => {
 		mockValid();
 
-		this.settingsStub.returns({ securitySchemas: ['api-key', 'api-secret'] });
+		this.settingsStub.returns({ securitySchemes: ['api-key', 'api-secret'] });
 
 		const schemaValidator = new SchemaValidator('/api/secured');
 		assert(!schemaValidator.shouldValidateApiSecuritySchemas());
+	});
+
+	it('should return \'false\' when has\'t securitySchemes', () => {
+
+		mockWithoutSecuritySchems();
+
+		this.settingsStub.returns({ securitySchemes: ['api-key', 'api-secret'] });
+
+		const schemaValidator = new SchemaValidator('/api/unsecured');
+		assert(!schemaValidator.shouldValidateApiSecuritySchemas());
+	});
+
+	describe('should return the schema validated', () => {
+
+		it('should return the authorization headers', () => {
+
+			mockValid();
+
+			const apiKeys = ['api-key', 'api-secret'];
+
+			this.settingsStub.returns({ securitySchemes: apiKeys });
+
+			const schemaValidator = new SchemaValidator('/api/secured');
+			assert.deepStrictEqual(schemaValidator.getAuthorizationHeaders(), apiKeys);
+
+		});
+
+		it('should return the authorization headers', () => {
+
+			mockValid();
+
+			this.settingsStub.returns({ securitySchemes: [] });
+
+			const schemaValidator = new SchemaValidator('/api/foo');
+			assert.deepStrictEqual(schemaValidator.getAuthorizationHeaders(), []);
+
+		});
+	});
+
+	it('should use a custom schema path', () => {
+
+		mockValid('schemas/public.json');
+
+		this.settingsStub.returns({ schemaPath: 'schemas/public.json' });
+
+		const schemaValidator = new SchemaValidator('/api/bar');
+		assert(schemaValidator.validate());
 	});
 });
