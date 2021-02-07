@@ -1,6 +1,7 @@
 # Schema Validator
-[![Build Status](https://travis-ci.org/janis-commerce/schema-validator.svg?branch=master)](https://travis-ci.org/janis-commerce/schema-validator)
+![Build Status](https://github.com/janis-commerce/schema-validator/workflows/Build%20Status/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/janis-commerce/schema-validator/badge.svg?branch=master)](https://coveralls.io/github/janis-commerce/schema-validator?branch=master)
+[![npm version](https://badge.fury.io/js/%40janiscommerce%2Fschema-validator.svg)](https://www.npmjs.com/package/@janiscommerce/schema-validator)
 
 Schema Validator is a module that allows validate endpoints against a local schema.\
 The schema must be a `JSON` in OpenAPI 3.0\
