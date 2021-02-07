@@ -6,8 +6,7 @@ const assert = require('assert');
 const mockRequire = require('mock-require');
 const Settings = require('@janiscommerce/settings');
 
-const SchemaValidator = require('./../index');
-const { SchemaValidatorError } = require('./../schema-validator');
+const { SchemaValidator, SchemaValidatorError } = require('./../lib');
 
 describe('SchemaValidator', () => {
 
