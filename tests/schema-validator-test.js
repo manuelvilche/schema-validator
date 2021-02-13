@@ -178,7 +178,7 @@ describe('SchemaValidator', () => {
 
 		mockValid();
 
-		const testVerbNotFoundForAndEndpoint = (endpoint, verb) => {
+		const testVerbNotFoundForAnEndpoint = (endpoint, verb) => {
 			assert.throws(() => {
 				const schemaValidator = new SchemaValidator(endpoint, verb);
 				schemaValidator.validate();
@@ -190,16 +190,16 @@ describe('SchemaValidator', () => {
 
 		const spyCachePaths = sinon.spy(SchemaValidator, 'cachePaths');
 
-		testVerbNotFoundForAndEndpoint('/api/foo');
+		testVerbNotFoundForAnEndpoint('/api/foo');
 		sinon.assert.calledOnce(spyCachePaths);
 
-		testVerbNotFoundForAndEndpoint('/api/foo', 'get');
+		testVerbNotFoundForAnEndpoint('/api/foo', 'get');
 		sinon.assert.calledOnce(spyCachePaths);
 
-		testVerbNotFoundForAndEndpoint('/api/foo', 'post');
+		testVerbNotFoundForAnEndpoint('/api/foo', 'post');
 		sinon.assert.calledOnce(spyCachePaths);
 
-		testVerbNotFoundForAndEndpoint('/api/bar', 'post');
+		testVerbNotFoundForAnEndpoint('/api/bar', 'post');
 		sinon.assert.calledOnce(spyCachePaths);
 	});
 
