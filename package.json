@@ -30,7 +30,6 @@
     "sinon": "^9.2.4"
   },
   "dependencies": {
-    "@janiscommerce/settings": "^1.0.1",
-    "path": "^0.12.7"
+    "@janiscommerce/settings": "^1.0.1"
   }
 }
